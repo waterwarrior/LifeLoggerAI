@@ -382,15 +382,19 @@ Resources:
         2. NEVER ask the user to clarify missing parameters. Infer them from the context.
         3. If a user inputs a statement like "I drank vitamins", log it immediately. 
         
+        TARGET EXTRACTION (CRITICAL):
+        You MUST analyze the input to determine the subject of the event:
+        - If the user talks about themselves (e.g., "I", "my", or implies their own action), pass their sessionId to the target_id parameter.
+        - If the user mentions someone else by name or relation (e.g., "son", "Billy", "Ваня", "daughter", "kiddo"), you MUST pass THAT EXACT WORD as the target_id. Do NOT pass the sessionId.
+        
         TIMEZONE & REMINDERS (CRITICAL):
         The user is located in the timezone: ${UserTimeZone}.
-        When the user asks to schedule a reminder for a relative time, calculate the target date and time in the user's LOCAL timezone first, then convert it strictly into UTC format "YYYY-MM-DDThh:mm:ss" before calling schedule_reminder.
+        Calculate the target date/time in the user's LOCAL timezone first, then convert it strictly into UTC format "YYYY-MM-DDThh:mm:ss" before calling schedule_reminder.
         
         UPDATE AND DELETE PROTOCOL (CRITICAL):
         If the user asks to modify or delete a previously saved event:
-        1. If you don't have the exact timestamp in your immediate history, YOU MUST call get_events_history FIRST to find the EXACT 'original_utc_key' of the target event.
-        2. Once you have the exact 'original_utc_key' string, call delete_event or update_event and pass it as the 'timestamp' parameter.
-        NEVER guess the timestamp.
+        1. If you don't have the exact timestamp, YOU MUST call get_events_history FIRST to find the EXACT 'original_utc_key' of the target event.
+        2. Once you have it, call delete_event or update_event passing it as the 'timestamp'. NEVER guess the timestamp.
         
         CATEGORIZATION PROTOCOL:
         Assign a category automatically:
@@ -411,31 +415,31 @@ Resources:
               - Name: log_event
                 Description: 'Saves an event to the database.'
                 Parameters:
-                  target_id: { Type: string, Description: 'Target entity', Required: true }
+                  target_id: { Type: string, Description: 'If about user, pass sessionId. If about a child/other, pass the exact name used (e.g., "Ваня", "son").', Required: true }
                   category: { Type: string, Description: 'Inferred category', Required: true }
                   description: { Type: string, Description: 'Event description', Required: true }
               - Name: delete_event
                 Description: 'Deletes an event from the database.'
                 Parameters:
-                  target_id: { Type: string, Description: 'Target entity', Required: true }
+                  target_id: { Type: string, Description: 'If about user, pass sessionId. If about a child/other, pass the exact name used.', Required: true }
                   timestamp: { Type: string, Description: 'EXACT original_utc_key of the event to delete', Required: true }
               - Name: update_event
                 Description: 'Updates an existing event.'
                 Parameters:
-                  target_id: { Type: string, Description: 'Target entity', Required: true }
+                  target_id: { Type: string, Description: 'If about user, pass sessionId. If about a child/other, pass the exact name used.', Required: true }
                   timestamp: { Type: string, Description: 'EXACT original_utc_key of the event to update', Required: true }
                   new_description: { Type: string, Description: 'New description text', Required: true }
                   new_category: { Type: string, Description: 'New category', Required: false }
               - Name: schedule_reminder
                 Description: 'Sets a scheduled reminder.'
                 Parameters:
-                  target_id: { Type: string, Description: 'Target entity', Required: true }
+                  target_id: { Type: string, Description: 'If about user, pass sessionId. If about a child/other, pass the exact name used.', Required: true }
                   time_iso: { Type: string, Description: 'Trigger time in UTC (YYYY-MM-DDThh:mm:ss)', Required: true }
                   description: { Type: string, Description: 'Reminder text', Required: true }
               - Name: get_events_history
                 Description: 'Retrieves event history.'
                 Parameters:
-                  target_id: { Type: string, Description: 'Target entity', Required: true }
+                  target_id: { Type: string, Description: 'If about user, pass sessionId. If about a child/other, pass the exact name used.', Required: true }
                   days: { Type: string, Description: 'Number of recent days to query', Required: false }
 
   # 7. Webhook Lambda Role
